@@ -1,0 +1,55 @@
+<?php /** @var View $this */ ?>
+<h4><?php $this->_('Epp.tab.actions'); ?></h4>
+
+<div class="card mb-3">
+    <div class="card-header">Domain status actions</div>
+    <div class="card-body">
+        <p>Statuses: <?php echo $this->Html->safe(implode(', ', (array) ($info['statuses'] ?? []))); ?></p>
+        <div class="d-flex gap-2 flex-wrap">
+            <?php foreach ([
+                'hold' => ['Put on clientHold', 'btn-outline-warning'],
+                'unhold' => ['Remove clientHold', 'btn-outline-secondary'],
+                'restore' => ['Request RGP restore', 'btn-outline-primary']
+            ] as $action => $button) { ?>
+                <?php $this->Form->create(null, ['class' => 'd-inline']); ?>
+                <?php $this->Form->fieldHidden('action', $action); ?>
+                <button type="submit" class="btn <?php echo $button[1]; ?>"><?php echo $this->Html->safe($button[0]); ?></button>
+                <?php $this->Form->end(); ?>
+            <?php } ?>
+        </div>
+    </div>
+</div>
+
+<div class="card mb-3">
+    <div class="card-header">Transfer actions</div>
+    <div class="card-body">
+        <p>Transfer status: <strong><?php echo $this->Html->safe(($transfer['status'] ?? '') ?: 'not reported'); ?></strong></p>
+        <div class="d-flex gap-2 flex-wrap">
+            <?php foreach ([
+                'approve' => ['Approve transfer', 'btn-outline-success'],
+                'cancel' => ['Cancel transfer request', 'btn-outline-secondary'],
+                'reject' => ['Reject transfer', 'btn-outline-danger']
+            ] as $action => $button) { ?>
+                <?php $this->Form->create(null, ['class' => 'd-inline']); ?>
+                <?php $this->Form->fieldHidden('action', $action); ?>
+                <button type="submit" class="btn <?php echo $button[1]; ?>"><?php echo $this->Html->safe($button[0]); ?></button>
+                <?php $this->Form->end(); ?>
+            <?php } ?>
+        </div>
+    </div>
+</div>
+
+<div class="card border-danger">
+    <div class="card-header text-danger">Delete at registry</div>
+    <div class="card-body">
+        <p>This sends an immediate EPP <code>domain:delete</code>. Type <strong><?php echo $this->Html->safe($domain); ?></strong> to confirm.</p>
+        <?php $this->Form->create(); ?>
+        <?php $this->Form->fieldHidden('action', 'delete'); ?>
+        <div class="mb-3">
+            <?php $this->Form->label('Confirm domain', 'confirm_domain', ['class' => 'form-label']); ?>
+            <?php $this->Form->fieldText('confirm_domain', '', ['id' => 'confirm_domain', 'class' => 'form-control', 'autocomplete' => 'off']); ?>
+        </div>
+        <button type="submit" class="btn btn-danger">Delete domain at registry</button>
+        <?php $this->Form->end(); ?>
+    </div>
+</div>

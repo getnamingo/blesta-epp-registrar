@@ -1,0 +1,5 @@
+<?php
+$is_edit = true;
+$box_title = $this->_('Epp.edit_row.box_title', true);
+include __DIR__ . DS . 'row_form.pdt';
+?>

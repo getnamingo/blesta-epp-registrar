@@ -1,0 +1,45 @@
+<?php /** @var View $this */ ?>
+<h4><?php $this->_('Epp.tab.contacts'); ?></h4>
+<?php if ($contacts) { ?>
+<?php $this->Form->create(); ?>
+<?php if (($profile ?? '') === 'PT') { ?>
+<div class="alert alert-info">DNS.PT requires the validation time from your contact-validation process when contact data changes.</div>
+<div class="mb-3">
+    <?php $this->Form->label($this->_('Epp.service.pt_validated_date', true), 'contact_pt_validated_date', ['class' => 'form-label']); ?>
+    <?php $this->Form->fieldText('pt_validated_date', $pt_validated_date ?? '', [
+        'id' => 'contact_pt_validated_date', 'class' => 'form-control', 'placeholder' => '2026-08-17T12:00:00Z'
+    ]); ?>
+</div>
+<?php } ?>
+<?php foreach ($contacts as $role => $contact) { ?>
+<div class="card mb-3">
+    <div class="card-header text-capitalize"><?php echo $this->Html->safe($role); ?> <small class="text-muted"><?php echo $this->Html->safe($contact['external_id'] ?? ''); ?></small></div>
+    <div class="card-body">
+        <div class="row">
+            <?php
+            $contactFields = [
+                'first_name' => 'First name', 'last_name' => 'Last name', 'company' => 'Company',
+                'address1' => 'Address 1', 'address2' => 'Address 2', 'address3' => 'Address 3',
+                'city' => 'City', 'state' => 'State/Province', 'zip' => 'Postal code',
+                'country' => 'Country code', 'phone' => 'Phone', 'fax' => 'Fax', 'email' => 'Email'
+            ];
+            foreach ($contactFields as $key => $label) {
+                $wide = in_array($key, ['address1', 'address2', 'address3', 'email'], true);
+                $id = 'contact_' . $role . '_' . $key;
+            ?>
+            <div class="<?php echo $wide ? 'col-md-12' : 'col-md-6'; ?> mb-3">
+                <?php $this->Form->label($label, $id, ['class' => 'form-label']); ?>
+                <?php $this->Form->fieldText('contacts[' . $role . '][' . $key . ']', $contact[$key] ?? '', [
+                    'id' => $id, 'class' => 'form-control'
+                ]); ?>
+            </div>
+            <?php } ?>
+        </div>
+    </div>
+</div>
+<?php } ?>
+<div class="d-flex justify-content-end"><button type="submit" class="btn btn-primary"><?php $this->_('Epp.tab.save'); ?></button></div>
+<?php $this->Form->end(); ?>
+<?php } else { ?>
+<p class="text-muted"><?php $this->_('Epp.tab.no_records'); ?></p>
+<?php } ?>

@@ -1,0 +1,133 @@
+<?php /** @var View $this */ ?>
+<?php
+$this->Widget->clear();
+$this->Widget->setLinkButtons([[ 
+    'name' => $this->_('Epp.row.back', true),
+    'icon' => 'bi bi-arrow-left me-1',
+    'attributes' => ['href' => $this->base_uri . 'settings/company/modules/manage/' . ($module->id ?? '')]
+]]);
+$this->Form->create(null, ['class' => 'disable-on-submit']);
+$this->Widget->create($box_title);
+
+$text = function ($name, $label, $value = '', array $attributes = []) {
+    $attributes = array_merge(['id' => $name, 'class' => 'form-control'], $attributes);
+    ?>
+    <div class="mb-3">
+        <label for="<?php echo $this->Html->safe($name); ?>" class="form-label"><?php echo $this->Html->safe($label); ?></label>
+        <?php $this->Form->fieldText($name, $value, $attributes); ?>
+    </div>
+    <?php
+};
+$password = function ($name, $label, $value = '') {
+    ?>
+    <div class="mb-3">
+        <label for="<?php echo $this->Html->safe($name); ?>" class="form-label"><?php echo $this->Html->safe($label); ?></label>
+        <?php $this->Form->fieldPassword($name, $value, ['id' => $name, 'class' => 'form-control', 'autocomplete' => 'new-password']); ?>
+    </div>
+    <?php
+};
+$checkbox = function ($name, $label, $checked = false) {
+    ?>
+    <div class="mb-3 form-check">
+        <?php $this->Form->fieldCheckbox($name, 'true', $checked, ['id' => $name, 'class' => 'form-check-input']); ?>
+        <label for="<?php echo $this->Html->safe($name); ?>" class="form-check-label"><?php echo $this->Html->safe($label); ?></label>
+    </div>
+    <?php
+};
+?>
+
+<h6 class="form-section-header"><?php $this->_('Epp.row.section.connection'); ?></h6>
+<?php
+$text('account_name', $this->_('Epp.row.account_name', true), $vars->account_name ?? '');
+?>
+<div class="row">
+    <div class="col-md-8">
+        <?php $text('host', $this->_('Epp.row.host', true), $vars->host ?? ''); ?>
+    </div>
+    <div class="col-md-4">
+        <?php $text('port', $this->_('Epp.row.port', true), $vars->port ?? '700', ['inputmode' => 'numeric']); ?>
+    </div>
+</div>
+<?php
+$checkbox('tls_version', $this->_('Epp.row.tls_version', true), ($vars->tls_version ?? 'false') === 'true');
+$checkbox('verify_peer', $this->_('Epp.row.verify_peer', true), ($vars->verify_peer ?? 'false') === 'true');
+$text('cafile', $this->_('Epp.row.cafile', true), $vars->cafile ?? '');
+$text('local_cert', $this->_('Epp.row.local_cert', true), $vars->local_cert ?? 'cert.pem');
+$text('local_pk', $this->_('Epp.row.local_pk', true), $vars->local_pk ?? 'key.pem');
+$password('passphrase', $this->_('Epp.row.passphrase', true), $vars->passphrase ?? '');
+?>
+
+<h6 class="form-section-header"><?php $this->_('Epp.row.section.authentication'); ?></h6>
+<?php
+$text('clid', $this->_('Epp.row.clid', true), $vars->clid ?? '');
+$password('pw', $this->_('Epp.row.pw', true), $vars->pw ?? '');
+$text('registrarprefix', $this->_('Epp.row.registrarprefix', true), $vars->registrarprefix ?? 'epp');
+?>
+
+<h6 class="form-section-header"><?php $this->_('Epp.row.section.registry'); ?></h6>
+<div class="mb-3">
+    <label for="registry_profile" class="form-label"><?php $this->_('Epp.row.registry_profile'); ?></label>
+    <?php $this->Form->fieldSelect('registry_profile', $profiles, $vars->registry_profile ?? 'generic', [
+        'id' => 'registry_profile', 'class' => 'form-select'
+    ]); ?>
+</div>
+<div class="mb-3">
+    <label for="tlds" class="form-label"><?php $this->_('Epp.row.tlds'); ?></label>
+    <?php $this->Form->fieldTextarea('tlds', $vars->tlds ?? '', ['id' => 'tlds', 'class' => 'form-control', 'rows' => 3]); ?>
+    <div class="form-text"><?php $this->_('Epp.row.tlds_help'); ?></div>
+</div>
+<?php
+$checkbox('gtld', $this->_('Epp.row.gtld', true), ($vars->gtld ?? 'false') === 'true');
+$checkbox('min_data_set', $this->_('Epp.row.min_data_set', true), ($vars->min_data_set ?? 'false') === 'true');
+$checkbox(
+    'set_authinfo_on_info',
+    $this->_('Epp.row.set_authinfo_on_info', true),
+    ($vars->set_authinfo_on_info ?? 'false') === 'true'
+);
+$text('eurid_billing_contact', $this->_('Epp.row.eurid_billing_contact', true), $vars->eurid_billing_contact ?? '');
+$text('pl_contact_prefix', $this->_('Epp.row.pl_contact_prefix', true), $vars->pl_contact_prefix ?? '');
+$checkbox(
+    'tmch_claims_period_active',
+    $this->_('Epp.row.tmch_claims_period_active', true),
+    ($vars->tmch_claims_period_active ?? 'false') === 'true'
+);
+$checkbox(
+    'enable_fee_extension',
+    $this->_('Epp.row.enable_fee_extension', true),
+    ($vars->enable_fee_extension ?? 'false') === 'true'
+);
+$checkbox(
+    'allow_premium_domains',
+    $this->_('Epp.row.allow_premium_domains', true),
+    ($vars->allow_premium_domains ?? 'false') === 'true'
+);
+$text('fee_currency', $this->_('Epp.row.fee_currency', true), $vars->fee_currency ?? 'USD', ['maxlength' => 3]);
+?>
+
+<h6 class="form-section-header"><?php $this->_('Epp.row.section.advanced'); ?></h6>
+<div class="mb-3">
+    <label for="login_objects" class="form-label"><?php $this->_('Epp.row.login_objects'); ?></label>
+    <?php $this->Form->fieldTextarea('login_objects', $vars->login_objects ?? '', [
+        'id' => 'login_objects', 'class' => 'form-control', 'rows' => 3
+    ]); ?>
+</div>
+<div class="mb-3">
+    <label for="login_extensions" class="form-label"><?php $this->_('Epp.row.login_extensions'); ?></label>
+    <?php $this->Form->fieldTextarea('login_extensions', $vars->login_extensions ?? '', [
+        'id' => 'login_extensions', 'class' => 'form-control', 'rows' => 3
+    ]); ?>
+</div>
+<?php
+$checkbox('debug_log', $this->_('Epp.row.debug_log', true), ($vars->debug_log ?? 'false') === 'true');
+$text('debug_log_path', $this->_('Epp.row.debug_log_path', true), $vars->debug_log_path ?? '');
+?>
+<div class="alert alert-warning py-2"><?php $this->_('Epp.row.debug_warning'); ?></div>
+
+<?php $this->Widget->footer(); ?>
+<div class="d-flex justify-content-end">
+    <?php $this->Form->fieldSubmit('save', $this->_('Epp.row.save', true), ['class' => 'btn btn-primary']); ?>
+</div>
+<?php
+$this->Widget->end();
+$this->Form->end();
+?>

@@ -1,0 +1,66 @@
+<?php /** @var View $this */ ?>
+<h4><?php $this->_('Epp.tab.settings'); ?></h4>
+
+<div class="card mb-3">
+    <div class="card-header">Registrar lock</div>
+    <div class="card-body d-flex align-items-center justify-content-between flex-wrap gap-2">
+        <div>Current state: <strong class="<?php echo $locked ? 'text-success' : 'text-warning'; ?>"><?php echo $locked ? 'Locked' : 'Unlocked'; ?></strong></div>
+        <?php $this->Form->create(); ?>
+        <?php $this->Form->fieldHidden('action', $locked ? 'unlock' : 'lock'); ?>
+        <button type="submit" class="btn btn-primary"><?php echo $locked ? 'Unlock domain' : 'Lock domain'; ?></button>
+        <?php $this->Form->end(); ?>
+    </div>
+</div>
+
+<?php if ($privacy_available ?? true) { ?>
+<div class="card mb-3">
+    <div class="card-header">Contact privacy</div>
+    <div class="card-body">
+        <p class="text-muted">Apply or remove registry contact-disclosure protection. Registry policy determines whether this operation is supported.</p>
+        <div class="d-flex gap-2 flex-wrap">
+            <?php $this->Form->create(null, ['class' => 'd-inline']); ?>
+            <?php $this->Form->fieldHidden('action', 'privacy_enable'); ?>
+            <button type="submit" class="btn btn-primary">Enable privacy</button>
+            <?php $this->Form->end(); ?>
+            <?php $this->Form->create(null, ['class' => 'd-inline']); ?>
+            <?php $this->Form->fieldHidden('action', 'privacy_disable'); ?>
+            <button type="submit" class="btn btn-outline-secondary">Disable privacy</button>
+            <?php $this->Form->end(); ?>
+        </div>
+    </div>
+</div>
+<?php } ?>
+
+<?php if ($epp_code_enabled) { ?>
+<div class="card mb-3">
+    <div class="card-header">AuthInfo / EPP code</div>
+    <div class="card-body">
+        <?php if ($auth_info !== null) { ?>
+            <div class="alert alert-warning">Treat this code like a password.</div>
+            <div class="input-group mb-3">
+                <input class="form-control font-monospace" readonly value="<?php echo $this->Html->safe($auth_info); ?>">
+            </div>
+        <?php } ?>
+        <?php $this->Form->create(); ?>
+        <?php $this->Form->fieldHidden('action', 'auth_info'); ?>
+        <button type="submit" class="btn btn-primary">Retrieve AuthInfo</button>
+        <?php $this->Form->end(); ?>
+    </div>
+</div>
+<?php } ?>
+
+<?php if (!$client) { ?>
+<div class="card">
+    <div class="card-header">Set a new AuthInfo code</div>
+    <div class="card-body">
+        <?php $this->Form->create(); ?>
+        <?php $this->Form->fieldHidden('action', 'auth_update'); ?>
+        <div class="mb-3">
+            <?php $this->Form->label('New AuthInfo', 'new_auth_info', ['class' => 'form-label']); ?>
+            <?php $this->Form->fieldPassword('new_auth_info', '', ['id' => 'new_auth_info', 'class' => 'form-control', 'autocomplete' => 'new-password']); ?>
+        </div>
+        <button type="submit" class="btn btn-primary"><?php $this->_('Epp.tab.save'); ?></button>
+        <?php $this->Form->end(); ?>
+    </div>
+</div>
+<?php } ?>

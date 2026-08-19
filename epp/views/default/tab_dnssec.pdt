@@ -1,0 +1,55 @@
+<?php /** @var View $this */ ?>
+<h4><?php $this->_('Epp.tab.dnssec'); ?></h4>
+<?php if ($records) { ?>
+<div class="table-responsive"><table class="table">
+    <thead><tr><th>Key tag</th><th>Algorithm</th><th>Digest type</th><th>Digest</th><th></th></tr></thead>
+    <tbody>
+    <?php foreach ($records as $record) { ?>
+    <tr>
+        <td><?php echo (int) $record['key_tag']; ?></td>
+        <td><?php echo $this->Html->safe($algorithms[(string) $record['algorithm']] ?? $record['algorithm']); ?></td>
+        <td><?php echo $this->Html->safe($digests[(string) $record['digest_type']] ?? $record['digest_type']); ?></td>
+        <td class="text-break"><code><?php echo $this->Html->safe($record['digest']); ?></code></td>
+        <td class="text-end">
+            <?php $this->Form->create(); ?>
+            <?php $this->Form->fieldHidden('action', 'remove'); ?>
+            <?php $this->Form->fieldHidden('key_tag', $record['key_tag']); ?>
+            <?php $this->Form->fieldHidden('algorithm', $record['algorithm']); ?>
+            <?php $this->Form->fieldHidden('digest_type', $record['digest_type']); ?>
+            <?php $this->Form->fieldHidden('digest', $record['digest']); ?>
+            <button type="submit" class="btn btn-sm btn-outline-danger"><?php $this->_('Epp.tab.remove'); ?></button>
+            <?php $this->Form->end(); ?>
+        </td>
+    </tr>
+    <?php } ?>
+    </tbody>
+</table></div>
+<?php } else { ?><p class="text-muted"><?php $this->_('Epp.tab.no_records'); ?></p><?php } ?>
+
+<div class="card">
+    <div class="card-header">Add DS record</div>
+    <div class="card-body">
+        <?php $this->Form->create(); ?>
+        <?php $this->Form->fieldHidden('action', 'add'); ?>
+        <div class="row">
+            <div class="col-md-3 mb-3">
+                <?php $this->Form->label('Key tag', 'dnssec_key_tag', ['class' => 'form-label']); ?>
+                <?php $this->Form->fieldText('key_tag', '', ['id' => 'dnssec_key_tag', 'class' => 'form-control', 'inputmode' => 'numeric']); ?>
+            </div>
+            <div class="col-md-4 mb-3">
+                <?php $this->Form->label('Algorithm', 'dnssec_algorithm', ['class' => 'form-label']); ?>
+                <?php $this->Form->fieldSelect('algorithm', ['' => 'Please select'] + $algorithms, '', ['id' => 'dnssec_algorithm', 'class' => 'form-select']); ?>
+            </div>
+            <div class="col-md-5 mb-3">
+                <?php $this->Form->label('Digest type', 'dnssec_digest_type', ['class' => 'form-label']); ?>
+                <?php $this->Form->fieldSelect('digest_type', ['' => 'Please select'] + $digests, '', ['id' => 'dnssec_digest_type', 'class' => 'form-select']); ?>
+            </div>
+        </div>
+        <div class="mb-3">
+            <?php $this->Form->label('Digest', 'dnssec_digest', ['class' => 'form-label']); ?>
+            <?php $this->Form->fieldText('digest', '', ['id' => 'dnssec_digest', 'class' => 'form-control font-monospace']); ?>
+        </div>
+        <button type="submit" class="btn btn-primary"><?php $this->_('Epp.tab.add'); ?></button>
+        <?php $this->Form->end(); ?>
+    </div>
+</div>

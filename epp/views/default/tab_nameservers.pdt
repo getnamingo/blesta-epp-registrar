@@ -1,0 +1,15 @@
+<?php /** @var View $this */ ?>
+<h4><?php $this->_('Epp.tab.nameservers'); ?></h4>
+<?php $this->Form->create(); ?>
+<?php for ($i = 0; $i < 5; $i++) { ?>
+<div class="mb-3">
+    <?php $this->Form->label($this->_('Epp.service.nameserver', true, $i + 1), 'epp_ns_' . ($i + 1), ['class' => 'form-label']); ?>
+    <?php $this->Form->fieldText('ns[]', $nameservers[$i] ?? '', [
+        'id' => 'epp_ns_' . ($i + 1), 'class' => 'form-control', 'autocomplete' => 'off'
+    ]); ?>
+</div>
+<?php } ?>
+<div class="d-flex justify-content-end">
+    <button type="submit" class="btn btn-primary"><?php $this->_('Epp.tab.save'); ?></button>
+</div>
+<?php $this->Form->end(); ?>

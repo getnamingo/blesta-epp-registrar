@@ -1,0 +1,38 @@
+{
+    "version": "1.0.0",
+    "type": "registrar",
+    "name": "Epp.name",
+    "description": "Epp.description",
+    "icon": "bi bi-globe2",
+    "authors": [
+        {
+            "name": "Namingo",
+            "url": "https://namingo.org"
+        }
+    ],
+    "package": {
+        "name_key": "domain"
+    },
+    "service": {
+        "name_key": "domain"
+    },
+    "module": {
+        "row": "Epp.module_row",
+        "rows": "Epp.module_row_plural",
+        "group": "Epp.module_group",
+        "row_key": "host"
+    },
+    "email_tags": {
+        "module": ["host", "port", "clid", "registry_profile"],
+        "package": ["type", "tlds", "ns"],
+        "service": ["domain", "transfer", "ns1", "ns2", "ns3", "ns4", "ns5"]
+    },
+    "features": {
+        "id_protection": 1,
+        "epp_code": 1
+    },
+    "logo": {
+        "light": "views/default/images/logo.png",
+        "dark": "views/default/images/logo-dark.png"
+    }
+}

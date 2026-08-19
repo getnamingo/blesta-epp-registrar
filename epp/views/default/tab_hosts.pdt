@@ -1,0 +1,67 @@
+<?php /** @var View $this */ ?>
+<h4><?php $this->_('Epp.tab.hosts'); ?></h4>
+<?php if ($hosts) { ?>
+<div class="table-responsive"><table class="table">
+    <thead><tr><th>Hostname</th><th>IP addresses</th><th>Statuses</th><th></th></tr></thead>
+    <tbody>
+    <?php foreach ($hosts as $host) { ?>
+    <tr>
+        <td><?php echo $this->Html->safe($host['hostname'] ?? ''); ?></td>
+        <td><?php echo $this->Html->safe(implode(', ', (array) ($host['addresses'] ?? []))); ?></td>
+        <td><?php echo $this->Html->safe(implode(', ', (array) ($host['statuses'] ?? []))); ?></td>
+        <td class="text-end">
+            <?php $this->Form->create(); ?>
+            <?php $this->Form->fieldHidden('action', 'delete'); ?>
+            <?php $this->Form->fieldHidden('hostname', $host['hostname'] ?? ''); ?>
+            <button type="submit" class="btn btn-sm btn-outline-danger"><?php $this->_('Epp.tab.remove'); ?></button>
+            <?php $this->Form->end(); ?>
+        </td>
+    </tr>
+    <?php } ?>
+    </tbody>
+</table></div>
+<?php } else { ?><p class="text-muted"><?php $this->_('Epp.tab.no_records'); ?></p><?php } ?>
+
+<div class="card mb-3">
+    <div class="card-header">Create child nameserver</div>
+    <div class="card-body">
+        <?php $this->Form->create(); ?>
+        <?php $this->Form->fieldHidden('action', 'create'); ?>
+        <div class="row">
+            <div class="col-md-7 mb-3">
+                <?php $this->Form->label('Hostname', 'new_hostname', ['class' => 'form-label']); ?>
+                <?php $this->Form->fieldText('hostname', '', ['id' => 'new_hostname', 'class' => 'form-control', 'placeholder' => 'ns1.' . $domain]); ?>
+            </div>
+            <div class="col-md-5 mb-3">
+                <?php $this->Form->label('IP address', 'new_ip_address', ['class' => 'form-label']); ?>
+                <?php $this->Form->fieldText('ip_address', '', ['id' => 'new_ip_address', 'class' => 'form-control']); ?>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary"><?php $this->_('Epp.tab.add'); ?></button>
+        <?php $this->Form->end(); ?>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">Replace a host address</div>
+    <div class="card-body">
+        <?php $this->Form->create(); ?>
+        <?php $this->Form->fieldHidden('action', 'update'); ?>
+        <div class="row">
+            <div class="col-md-4 mb-3">
+                <?php $this->Form->label('Hostname', 'update_hostname', ['class' => 'form-label']); ?>
+                <?php $this->Form->fieldText('hostname', '', ['id' => 'update_hostname', 'class' => 'form-control']); ?>
+            </div>
+            <div class="col-md-4 mb-3">
+                <?php $this->Form->label('Current IP', 'current_ip_address', ['class' => 'form-label']); ?>
+                <?php $this->Form->fieldText('current_ip_address', '', ['id' => 'current_ip_address', 'class' => 'form-control']); ?>
+            </div>
+            <div class="col-md-4 mb-3">
+                <?php $this->Form->label('New IP', 'replacement_ip_address', ['class' => 'form-label']); ?>
+                <?php $this->Form->fieldText('new_ip_address', '', ['id' => 'replacement_ip_address', 'class' => 'form-control']); ?>
+            </div>
+        </div>
+        <button type="submit" class="btn btn-primary"><?php $this->_('Epp.tab.save'); ?></button>
+        <?php $this->Form->end(); ?>
+    </div>
+</div>

@@ -1,0 +1,20 @@
+<?php /** @var View $this */ ?>
+<h4><?php echo $this->Html->safe($domain); ?></h4>
+<?php if (!empty($info)) { ?>
+<div class="table-responsive">
+<table class="table table-striped">
+    <tbody>
+        <tr><th scope="row">Registry object ID</th><td><?php echo $this->Html->safe($info['roid'] ?? ''); ?></td></tr>
+        <tr><th scope="row">Created</th><td><?php echo $this->Html->safe($info['created'] ?? ''); ?></td></tr>
+        <tr><th scope="row">Updated</th><td><?php echo $this->Html->safe($info['updated'] ?? ''); ?></td></tr>
+        <tr><th scope="row">Expires</th><td><?php echo $this->Html->safe($info['expires'] ?? ''); ?></td></tr>
+        <tr><th scope="row">Statuses</th><td>
+            <?php foreach ((array) ($info['statuses'] ?? []) as $status) { ?>
+                <span class="badge bg-secondary me-1"><?php echo $this->Html->safe($status); ?></span>
+            <?php } ?>
+        </td></tr>
+        <tr><th scope="row">Nameservers</th><td><?php echo $this->Html->safe(implode(', ', (array) ($info['nameservers'] ?? []))); ?></td></tr>
+    </tbody>
+</table>
+</div>
+<?php } ?>

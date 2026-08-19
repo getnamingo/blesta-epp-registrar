@@ -1,0 +1,10 @@
+{
+    "name": "getnamingo/blesta-epp-registrar",
+    "description": "Generic EPP registrar module for Blesta",
+    "license": "MIT",
+    "type": "blesta-module",
+    "require": {
+        "php": ">=8.1",
+        "blesta/composer-installer": "~1.0"
+    }
+}
