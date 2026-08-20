@@ -6,22 +6,6 @@
 
 A generic Blesta registrar module for connecting to any domain registry that uses the EPP protocol.
 
-## Features
-
-- Domain availability, registration, transfer, renewal, restore, and explicit registry deletion
-- Registration/expiration-date synchronization and live EPP status display
-- Nameserver management and child nameserver (host object) management
-- Registrant, admin, technical, and billing contact management
-- Registrar lock and `clientHold` management
-- AuthInfo retrieval and update
-- Contact privacy/disclosure management
-- DNSSEC DS record add/remove/list
-- Transfer query, approve, cancel, and reject actions
-- IDN conversion
-- EPP fee-extension premium detection
-- TMCH claims-create fields
-- Generic and registry-specific profiles supplied by the Namingo client
-
 ## Registry Support
 
 | Registry | TLDs | Profile | Needs |
@@ -80,33 +64,114 @@ A generic Blesta registrar module for connecting to any domain registry that use
 
 ## Requirements
 
-- Blesta 5.9 or newer (including Blesta 6)
-- PHP 8.3 or newer with OpenSSL, SimpleXML, and XMLWriter
+- Blesta 6.0 or newer
+- PHP 8.2 or newer with OpenSSL, SimpleXML, and XMLWriter
 - Outbound TCP access to the registry's EPP port
 - A registry-issued/approved client certificate and private key
 
 ## Installation
 
-1. Extract this archive into Blesta so the main file is:
+The example below assumes Blesta was installed using the standard installation script and is located at `/home/blesta/public_html`. If you installed Blesta elsewhere, adjust the paths accordingly.
 
-   ```text
-   /path/to/blesta/components/modules/epp/epp.php
-   ```
+### 1. Install the module
 
-2. Put the client certificate and private key in the module directory (or use absolute paths). The default relative paths are:
+Clone the repository and move the `epp` module into Blesta:
 
-   ```text
-   components/modules/epp/cert.pem
-   components/modules/epp/key.pem
-   ```
+```bash
+cd /tmp
+git clone --depth 1 https://github.com/getnamingo/blesta-epp-registrar.git
+mv blesta-epp-registrar/epp /home/blesta/public_html/components/modules/
+chown -R blesta:blesta /home/blesta/public_html/components/modules/epp
+```
 
-3. Make the files readable by the PHP/web-server user. Keep the private key out of web-accessible backups and restrict its permissions.
+The main module file should now be located at `/home/blesta/public_html/components/modules/epp/epp.php`
 
-4. In Blesta, go to **Packages → Domain Options → Registrars** (or **Settings → Company → Modules** on older installations), install **EPP Registrar**, then add an EPP account.
+### 2. Install the EPP client certificate
 
-5. Enter the same endpoint, TLS, authentication, registry-profile, Minimum Data Set, gTLD, fee-extension, and logging values. Also enter the TLDs served by this account; Blesta needs this list to expose the registrar for those TLDs.
+Most production EPP registries require a client certificate and private key issued or approved by the registry.
 
-6. Create/assign domain packages through Blesta's Domain Manager and select the desired TLDs and default nameservers.
+By default, the module expects:
+
+```bash
+/home/blesta/public_html/components/modules/epp/cert.pem
+/home/blesta/public_html/components/modules/epp/key.pem
+```
+
+If the registry supplied these files, copy them into the module directory:
+
+```bash
+cp /path/to/cert.pem /home/blesta/public_html/components/modules/epp/cert.pem
+cp /path/to/key.pem /home/blesta/public_html/components/modules/epp/key.pem
+
+chown blesta:blesta /home/blesta/public_html/components/modules/epp/cert.pem
+chown blesta:blesta /home/blesta/public_html/components/modules/epp/key.pem
+
+chmod 644 /home/blesta/public_html/components/modules/epp/cert.pem
+chmod 600 /home/blesta/public_html/components/modules/epp/key.pem
+```
+
+Absolute certificate and private-key paths may also be used in the EPP account configuration.
+
+### 3. Generate a certificate for testing only
+
+If you are using a test EPP server that accepts self-signed client certificates, you can generate a temporary certificate:
+
+```bash
+cd /home/blesta/public_html/components/modules/epp
+
+openssl genrsa -out key.pem 2048
+
+openssl req -new -x509 \
+    -key key.pem \
+    -out cert.pem \
+    -days 365
+
+chown blesta:blesta key.pem cert.pem
+chmod 600 key.pem
+chmod 644 cert.pem
+```
+
+Do not normally use a self-signed certificate in production. Use the certificate and private key issued or approved by your registry.
+
+### 4. Install the module in Blesta
+
+In Blesta, go to **Packages → Domain Options → Registrars**.
+
+Select EPP Registrar, install it, and add your EPP account.
+
+Configure the registry hostname, EPP port, Client ID, password, certificate/key paths, registry profile, and supported TLDs.
+
+For the default certificate locations, use:
+
+```text`
+cert.pem
+key.pem
+```
+
+or use absolute paths if preferred.
+
+### 5. Configure domain packages
+
+In Blesta, go to **Packages → Domain Options**.
+
+Import or add the TLDs you want to sell, then configure pricing and registrar assignment for each TLD.
+
+For each TLD:
+
+1. Select **EPP Registrar** as the registrar.
+2. Choose the appropriate EPP account/module row.
+3. Configure the registration, renewal, transfer, and redemption pricing as required.
+4. Set the supported registration periods.
+5. Configure the default nameservers that should be used for new registrations.
+
+For example:
+
+```text
+ns1.example.com
+ns2.example.com
+```
+
+Make sure the TLD is also listed under **Supported TLDs** in the corresponding EPP account configuration.
 
 ## Troubleshooting
 

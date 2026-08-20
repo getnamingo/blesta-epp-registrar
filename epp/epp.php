@@ -1,10 +1,8 @@
 <?php
-
 /**
  * Generic EPP registrar module for Blesta.
  *
- * Written for Namingo, 2026. The EPP request layer is supplied separately
- * from https://github.com/getnamingo/whmcs-epp-registrar.
+ * Written in 2026 by Namingo Team (https://namingo.org)
  *
  * @license MIT
  */
@@ -320,22 +318,6 @@ class Epp extends RegistrarModule
         ));
         $fields->setField($type);
 
-        $tldOptions = $fields->label(Language::_('Epp.package.tlds', true));
-        $tlds = $this->getTlds($vars->module_row ?? null);
-        sort($tlds);
-        foreach ($tlds as $tld) {
-            $id = 'epp_tld_' . preg_replace('/[^a-z0-9]+/i', '_', trim($tld, '.'));
-            $label = $fields->label($tld, $id);
-            $tldOptions->attach($fields->fieldCheckbox(
-                'meta[tlds][]',
-                $tld,
-                isset($vars->meta['tlds']) && in_array($tld, (array) $vars->meta['tlds'], true),
-                ['id' => $id],
-                $label
-            ));
-        }
-        $fields->setField($tldOptions);
-
         for ($i = 1; $i <= self::MAX_NAMESERVERS; $i++) {
             $label = $fields->label(Language::_('Epp.package.nameserver', true, $i), 'epp_ns' . $i);
             $label->attach($fields->fieldText(
@@ -372,10 +354,6 @@ class Epp extends RegistrarModule
     private function savePackage(array $vars = null)
     {
         $meta = (array) ($vars['meta'] ?? []);
-        if (empty($meta['tlds'])) {
-            $this->Input->setErrors(['tlds' => ['required' => Language::_('Epp.!error.tlds', true)]]);
-            return;
-        }
 
         $result = [];
         foreach ($meta as $key => $value) {
@@ -1221,8 +1199,10 @@ class Epp extends RegistrarModule
      * EPP supports checking several names in one command. This method is used
      * by newer Domain Manager versions when available.
      */
-    public function bulkCheckAvailability(array $domains, $module_row_id = null)
+    public function bulkCheckAvailability($domains, $module_row_id = null)
     {
+        $domains = is_array($domains) ? $domains : (array) $domains;
+
         $result = [];
         try {
             $row = $this->resolveRow($module_row_id);
