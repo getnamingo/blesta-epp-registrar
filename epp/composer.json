@@ -4,7 +4,7 @@
     "license": "MIT",
     "type": "blesta-module",
     "require": {
-        "php": ">=8.1",
+        "php": ">=8.2",
         "blesta/composer-installer": "~1.0"
     }
 }

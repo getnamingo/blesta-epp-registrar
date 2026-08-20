@@ -32,7 +32,7 @@
         "epp_code": 1
     },
     "logo": {
-        "light": "views/default/images/logo.png",
-        "dark": "views/default/images/logo-dark.png"
+        "light": "views/default/images/logo.svg",
+        "dark": "views/default/images/logo.svg"
     }
 }

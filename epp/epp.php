@@ -2081,6 +2081,17 @@ class Epp extends RegistrarModule
     private function contactPayload($id, array $data, $row, $role, $create, array $serviceVars = [])
     {
         $profile = (string) ($row->meta->registry_profile ?? self::DEFAULT_PROFILE);
+
+        $phone = trim((string) ($data['phone'] ?? ''));
+        if ($phone !== '' && substr($phone, 0, 1) !== '+') {
+            $phone = '+' . $phone;
+        }
+
+        $state = trim((string) ($data['state'] ?? ''));
+        if ($state !== '' && strlen($state) <= 2) {
+            $state .= '-region';
+        }
+
         $payload = [
             'id' => $id,
             'type' => 'int',
@@ -2091,10 +2102,10 @@ class Epp extends RegistrarModule
             'address2' => (string) ($data['address2'] ?? ''),
             'address3' => (string) ($data['address3'] ?? ''),
             'city' => (string) ($data['city'] ?? ''),
-            'state' => (string) ($data['state'] ?? ''),
+            'state' => $state,
             'postcode' => (string) ($data['zip'] ?? ''),
             'country' => strtoupper((string) ($data['country'] ?? '')),
-            'fullphonenumber' => (string) ($data['phone'] ?? ''),
+            'fullphonenumber' => $phone,
             'email' => (string) ($data['email'] ?? '')
         ];
         if ($create) {
