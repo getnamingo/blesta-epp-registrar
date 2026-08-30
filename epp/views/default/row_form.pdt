@@ -64,6 +64,26 @@ $password('pw', $this->_('Epp.row.pw', true), $vars->pw ?? '');
 $text('registrarprefix', $this->_('Epp.row.registrarprefix', true), $vars->registrarprefix ?? 'epp');
 ?>
 
+<div class="mb-3">
+    <label for="contact_postal_type" class="form-label">
+        <?php $this->_('Epp.row.contact_postal_type'); ?>
+    </label>
+    <?php
+    $this->Form->fieldSelect(
+        'contact_postal_type',
+        [
+            'int' => 'Internationalized (int)',
+            'loc' => 'Localized (loc)'
+        ],
+        $vars->contact_postal_type ?? 'int',
+        ['id' => 'contact_postal_type', 'class' => 'form-select']
+    );
+    ?>
+    <div class="form-text">
+        <?php $this->_('Epp.row.contact_postal_type_help'); ?>
+    </div>
+</div>
+
 <h6 class="form-section-header"><?php $this->_('Epp.row.section.registry'); ?></h6>
 <div class="mb-3">
     <label for="registry_profile" class="form-label"><?php $this->_('Epp.row.registry_profile'); ?></label>

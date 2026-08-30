@@ -193,6 +193,7 @@ class Epp extends RegistrarModule
             'clid' => '',
             'pw' => '',
             'registrarprefix' => 'epp',
+            'contact_postal_type' => 'int',
             'registry_profile' => self::DEFAULT_PROFILE,
             'tlds' => '',
             'set_authinfo_on_info' => 'false',
@@ -282,6 +283,12 @@ class Epp extends RegistrarModule
                 'valid' => [
                     'rule' => ['array_key_exists', $profiles],
                     'message' => Language::_('Epp.!error.profile', true)
+                ]
+            ],
+            'contact_postal_type' => [
+                'valid' => [
+                    'rule' => ['in_array', ['int', 'loc']],
+                    'message' => 'Select a valid contact postal address type.'
                 ]
             ],
             'tlds' => [
@@ -1984,8 +1991,12 @@ class Epp extends RegistrarModule
 
             $contactIds = [];
             $contactTypes = $minimumData ? [] : $this->contactTypesForProfile($profile);
+            $registrarPrefix = strtoupper(trim((string) ($row->meta->registrarprefix ?? '')));
+
             foreach ($contactTypes as $role) {
-                $id = strtoupper($this->randomContactId());
+                $id = strtoupper($this->randomContactId())
+                    . ($registrarPrefix !== '' ? '-' . $registrarPrefix : '');
+
                 if ($profile === 'PL' && trim((string) ($row->meta->pl_contact_prefix ?? '')) !== '') {
                     $id = trim((string) $row->meta->pl_contact_prefix) . $id;
                 }
@@ -2081,6 +2092,9 @@ class Epp extends RegistrarModule
     private function contactPayload($id, array $data, $row, $role, $create, array $serviceVars = [])
     {
         $profile = (string) ($row->meta->registry_profile ?? self::DEFAULT_PROFILE);
+        $contactPostalType = ($row->meta->contact_postal_type ?? 'int') === 'loc'
+            ? 'loc'
+            : 'int';
 
         $phone = trim((string) ($data['phone'] ?? ''));
         if ($phone !== '' && substr($phone, 0, 1) !== '+') {
@@ -2094,7 +2108,7 @@ class Epp extends RegistrarModule
 
         $payload = [
             'id' => $id,
-            'type' => 'int',
+            'type' => $contactPostalType,
             'firstname' => (string) ($data['first_name'] ?? ''),
             'lastname' => (string) ($data['last_name'] ?? ''),
             'companyname' => (string) ($data['company'] ?? ''),
