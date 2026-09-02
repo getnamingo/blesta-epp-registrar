@@ -92,6 +92,11 @@ $text('registrarprefix', $this->_('Epp.row.registrarprefix', true), $vars->regis
     ]); ?>
 </div>
 <div class="mb-3">
+    <label for="ns_mode" class="form-label"><?php $this->_('Epp.row.ns_mode'); ?></label>
+    <?php $this->Form->fieldSelect('ns_mode', ['hostObj' => 'hostObj', 'hostAttr' => 'hostAttr'], $vars->ns_mode ?? 'hostObj', ['id' => 'ns_mode', 'class' => 'form-select']); ?>
+    <div class="form-text"><?php $this->_('Epp.row.ns_mode_help'); ?></div>
+</div>
+<div class="mb-3">
     <label for="tlds" class="form-label"><?php $this->_('Epp.row.tlds'); ?></label>
     <?php $this->Form->fieldTextarea('tlds', $vars->tlds ?? '', ['id' => 'tlds', 'class' => 'form-control', 'rows' => 3]); ?>
     <div class="form-text"><?php $this->_('Epp.row.tlds_help'); ?></div>

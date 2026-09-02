@@ -195,6 +195,7 @@ class Epp extends RegistrarModule
             'registrarprefix' => 'epp',
             'contact_postal_type' => 'int',
             'registry_profile' => self::DEFAULT_PROFILE,
+            'ns_mode' => 'hostObj',
             'tlds' => '',
             'set_authinfo_on_info' => 'false',
             'login_objects' => '',
@@ -283,6 +284,12 @@ class Epp extends RegistrarModule
                 'valid' => [
                     'rule' => ['array_key_exists', $profiles],
                     'message' => Language::_('Epp.!error.profile', true)
+                ]
+            ],
+            'ns_mode' => [
+                'valid' => [
+                    'rule' => ['in_array', ['hostObj', 'hostAttr']],
+                    'message' => 'Select a valid nameserver mode.'
                 ]
             ],
             'contact_postal_type' => [
@@ -1703,6 +1710,7 @@ class Epp extends RegistrarModule
     public function createHost($hostname, $ipAddress, $module_row_id = null)
     {
         $row = $this->resolveRow($module_row_id);
+        $this->assertHostObjectsSupported($row);
         $hostname = $this->normalizeDomain($hostname);
         $this->assertIp($ipAddress);
         return $this->withClient($row, function ($client) use ($hostname, $ipAddress, $row) {
@@ -1721,6 +1729,7 @@ class Epp extends RegistrarModule
     public function updateHost($hostname, $currentIp, $newIp, $module_row_id = null)
     {
         $row = $this->resolveRow($module_row_id);
+        $this->assertHostObjectsSupported($row);
         $hostname = $this->normalizeDomain($hostname);
         $this->assertIp($currentIp);
         $this->assertIp($newIp);
@@ -1737,6 +1746,7 @@ class Epp extends RegistrarModule
     public function deleteHost($hostname, $module_row_id = null)
     {
         $row = $this->resolveRow($module_row_id);
+        $this->assertHostObjectsSupported($row);
         $hostname = $this->normalizeDomain($hostname);
         return $this->withClient($row, function ($client) use ($hostname, $row) {
             $this->invoke($client, 'hostDelete', ['hostname' => $hostname], $row);
@@ -1747,6 +1757,7 @@ class Epp extends RegistrarModule
     public function getChildHosts($domain, $module_row_id = null)
     {
         $row = $this->resolveRow($module_row_id);
+        $this->assertHostObjectsSupported($row);
         $domain = $this->normalizeDomain($domain);
         return $this->withClient($row, function ($client) use ($domain, $row) {
             $info = $this->invoke($client, 'domainInfo', ['domainname' => $domain], $row);
@@ -2333,11 +2344,24 @@ class Epp extends RegistrarModule
 
     private function usesHostAttributes($row)
     {
+        if ((string) ($row->meta->ns_mode ?? 'hostObj') === 'hostAttr') {
+            return true;
+        }
+
         return in_array(
             (string) ($row->meta->registry_profile ?? self::DEFAULT_PROFILE),
             ['EU', 'HR', 'LV', 'GE'],
             true
         );
+    }
+
+    private function assertHostObjectsSupported($row)
+    {
+        if ($this->usesHostAttributes($row)) {
+            throw new \RuntimeException(
+                'Host object operations are unavailable when Nameserver Mode is hostAttr.'
+            );
+        }
     }
 
     private function validateDsRecord(array $record)
