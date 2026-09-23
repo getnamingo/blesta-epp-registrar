@@ -1672,6 +1672,9 @@ class Epp extends RegistrarModule
     private function setPrivacyOnClient($client, $domain, $enabled, $row)
     {
         $profile = (string) ($row->meta->registry_profile ?? self::DEFAULT_PROFILE);
+        $contactPostalType = ($row->meta->contact_postal_type ?? 'int') === 'loc'
+            ? 'loc'
+            : 'int';
         $escape = static function ($value) {
             return htmlspecialchars((string) $value, ENT_XML1 | ENT_QUOTES, 'UTF-8');
         };
@@ -1699,8 +1702,8 @@ class Epp extends RegistrarModule
                 . '<epp xmlns="urn:ietf:params:xml:ns:epp-1.0"><command><update>'
                 . '<contact:update xmlns:contact="urn:ietf:params:xml:ns:contact-1.0">'
                 . '<contact:id>' . $escape($contactId) . '</contact:id><contact:chg>'
-                . '<contact:disclose flag="' . $flag . '"><contact:name type="int"/>'
-                . '<contact:addr type="int"/><contact:voice/><contact:fax/><contact:email/>'
+                . '<contact:disclose flag="' . $flag . '"><contact:name type="' . $contactPostalType . '"/>'
+                . '<contact:addr type="' . $contactPostalType . '"/><contact:voice/><contact:fax/><contact:email/>'
                 . '</contact:disclose></contact:chg></contact:update></update><clTRID>'
                 . $escape($this->transactionId('privacy')) . '</clTRID></command></epp>';
             $this->invoke($client, 'rawXml', ['xml' => $xml], $row);
