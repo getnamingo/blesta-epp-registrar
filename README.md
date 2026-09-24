@@ -71,107 +71,76 @@ A generic Blesta registrar module for connecting to any domain registry that use
 
 ## Installation
 
-The example below assumes Blesta was installed using the standard installation script and is located at `/home/blesta/public_html`. If you installed Blesta elsewhere, adjust the paths accordingly.
-
-### 1. Install the module
-
-Clone the repository and move the `epp` module into Blesta:
+The recommended way to install the module is with the automated installer:
 
 ```bash
-cd /tmp
-git clone --depth 1 https://github.com/getnamingo/blesta-epp-registrar.git
-mv blesta-epp-registrar/epp /home/blesta/public_html/components/modules/
-chown -R blesta:blesta /home/blesta/public_html/components/modules/epp
+bash <(wget -qO- https://namingo.org/install-blesta-epp.sh) namingo
 ```
 
-The main module file should now be located at `/home/blesta/public_html/components/modules/epp/epp.php`
-
-### 2. Install the EPP client certificate
-
-Most production EPP registries require a client certificate and private key issued or approved by the registry.
-
-By default, the module expects:
+Replace `namingo` with the registry name. Run without parameters to see all supported registry profiles:
 
 ```bash
-/home/blesta/public_html/components/modules/epp/cert.pem
-/home/blesta/public_html/components/modules/epp/key.pem
+bash <(wget -qO- https://namingo.org/install-blesta-epp.sh)
 ```
 
-If the registry supplied these files, copy them into the module directory:
+The installer automatically looks for Blesta under `/home` and `/var/www`. You may also specify the Blesta path explicitly:
 
 ```bash
-cp /path/to/cert.pem /home/blesta/public_html/components/modules/epp/cert.pem
-cp /path/to/key.pem /home/blesta/public_html/components/modules/epp/key.pem
-
-chown blesta:blesta /home/blesta/public_html/components/modules/epp/cert.pem
-chown blesta:blesta /home/blesta/public_html/components/modules/epp/key.pem
-
-chmod 644 /home/blesta/public_html/components/modules/epp/cert.pem
-chmod 600 /home/blesta/public_html/components/modules/epp/key.pem
+bash <(wget -qO- https://namingo.org/install-blesta-epp.sh) namingo /home/blesta/public_html
 ```
 
-Absolute certificate and private-key paths may also be used in the EPP account configuration.
+The installer creates a registry-specific Blesta module so multiple EPP modules can coexist without class, configuration, or language-name collisions. For example, installing `namingo` creates:
 
-### 3. Generate a certificate for testing only
-
-If you are using a test EPP server that accepts self-signed client certificates, you can generate a temporary certificate:
-
-```bash
-cd /home/blesta/public_html/components/modules/epp
-
-openssl genrsa -out key.pem 2048
-
-openssl req -new -x509 \
-    -key key.pem \
-    -out cert.pem \
-    -days 365
-
-chown blesta:blesta key.pem cert.pem
-chmod 600 key.pem
-chmod 644 cert.pem
+```text
+components/modules/namingo/
+components/modules/namingo/namingo.php
+components/modules/namingo/config/namingo.php
+components/modules/namingo/language/en_us/namingo.php
 ```
 
-Do not normally use a self-signed certificate in production. Use the certificate and private key issued or approved by your registry.
+It also changes the Blesta module class and the internal language/configuration namespace from the generic `Epp` name to the selected registry name. The bundled EPP client under `lib/` is left unchanged.
 
-### 4. Install the module in Blesta
+During installation, the script can optionally generate a **self-signed EPP client certificate for testing**. The generated files are:
 
-In Blesta, go to **Packages → Domain Options → Registrars**.
+```text
+components/modules/<registry>/cert.pem
+components/modules/<registry>/key.pem
+```
 
-Select EPP Registrar, install it, and add your EPP account.
+For production, replace them with the certificate and private key issued or approved by your registry.
 
-Configure the registry hostname, EPP port, Client ID, password, certificate/key paths, registry profile, and supported TLDs.
+After installation, in Blesta go to **Packages → Domain Options → Registrars**, select the newly created registry module (for example **Namingo EPP Registrar**), install it, and add your EPP account.
 
-For the default certificate locations, use:
+Configure the registry hostname, EPP port, Client ID, password, certificate/key paths, registry profile, supported TLDs, and any registry-specific options. With the default certificate locations, use:
 
-```text`
+```text
 cert.pem
 key.pem
 ```
 
-or use absolute paths if preferred.
+Then go to **Packages → Domain Options**, import or add the TLDs you want to sell, configure their pricing, and assign them to the installed registrar module.
 
-### 5. Configure domain packages
+### Manual installation
 
-In Blesta, go to **Packages → Domain Options**.
+If you do not want to use the installer, clone the repository and copy the generic `epp` module into Blesta:
 
-Import or add the TLDs you want to sell, then configure pricing and registrar assignment for each TLD.
-
-For each TLD:
-
-1. Select **EPP Registrar** as the registrar.
-2. Choose the appropriate EPP account/module row.
-3. Configure the registration, renewal, transfer, and redemption pricing as required.
-4. Set the supported registration periods.
-5. Configure the default nameservers that should be used for new registrations.
-
-For example:
-
-```text
-ns1.example.com
-ns2.example.com
+```bash
+cd /tmp
+git clone --depth 1 https://github.com/getnamingo/blesta-epp-registrar.git
+cp -a blesta-epp-registrar/epp /home/blesta/public_html/components/modules/
 ```
 
-Make sure the TLD is also listed under **Supported TLDs** in the corresponding EPP account configuration.
+The generic module can be used directly as `epp`. If you need more than one EPP registrar module in the same Blesta installation, use the automated installer so each copy receives a unique module directory, class, config namespace, and language namespace.
+
+## Upgrade
+
+Upgrade a registry-specific module by running the same installer again:
+
+```bash
+bash <(wget -qO- https://namingo.org/install-blesta-epp.sh) namingo /home/blesta/public_html
+```
+
+Existing top-level `*.pem` certificate/key files in that registry module directory are preserved during the upgrade.
 
 ## Troubleshooting
 
