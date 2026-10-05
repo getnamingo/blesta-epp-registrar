@@ -11,6 +11,7 @@ Configure::set('Epp.registry_profiles', [
     'PL' => 'NASK (.pl)',
     'PT' => 'DNS.PT (.pt)',
     'SE' => 'IIS (.se/.nu)',
+    'SI' => 'ARNES / Register.si (.si)',
     'SWITCH' => 'SWITCH (.ch/.li)',
     'UA' => 'Hostmaster (.ua)',
     'VRSN' => 'Verisign'

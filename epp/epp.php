@@ -2151,6 +2151,8 @@ class Epp extends RegistrarModule
         } elseif ($create && $profile === 'HR') {
             $payload['nin'] = (string) ($serviceVars['nin'] ?? '');
             $payload['nin_type'] = (string) ($serviceVars['nin_type'] ?? 'personal');
+        } elseif ($create && $profile === 'SI') {
+            $payload['nin_type'] = trim($payload['companyname']) !== '' ? 'org' : 'person';
         } elseif ($profile === 'PT') {
             $validatedDate = (string) ($serviceVars['pt_validated_date'] ?? $data['pt_validated_date'] ?? '');
             if (trim($validatedDate) === '') {

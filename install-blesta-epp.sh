@@ -2,7 +2,7 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-VERSION='1.0.2'
+VERSION='1.0.3'
 # Pin installer input to the reviewed source commit so a moved tag or branch
 # cannot silently change what is installed.
 SOURCE_COMMIT='1fd6ad912cbe4aae6a4b39d2ed4a37d0f616d5bc'
