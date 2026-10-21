@@ -1,7 +1,7 @@
 <?php /** @var View $this */ ?>
 <h4><?php $this->_('Epp.tab.nameservers'); ?></h4>
 <?php $this->Form->create(); ?>
-<?php for ($i = 0; $i < 5; $i++) { ?>
+<?php for ($i = 0; $i < ($max_nameservers ?? 5); $i++) { ?>
 <div class="mb-3">
     <?php $this->Form->label($this->_('Epp.service.nameserver', true, $i + 1), 'epp_ns_' . ($i + 1), ['class' => 'form-label']); ?>
     <?php $this->Form->fieldText('ns[]', $nameservers[$i] ?? '', [

@@ -31,7 +31,13 @@
 </div>
 <?php } ?>
 
-<?php if ($epp_code_enabled) { ?>
+<?php if (($profile ?? '') === 'RO') { ?>
+<div class="alert alert-info">
+    The holder must generate a registrar-transfer authorization key in the
+    <a href="https://www.rotld.ro/domadmin" target="_blank" rel="noopener noreferrer">RoTLD control panel</a>.
+    The domain management password is not a transfer key.
+</div>
+<?php } elseif ($epp_code_enabled) { ?>
 <div class="card mb-3">
     <div class="card-header">AuthInfo / EPP code</div>
     <div class="card-body">
@@ -49,7 +55,7 @@
 </div>
 <?php } ?>
 
-<?php if (!$client) { ?>
+<?php if (!$client && ($profile ?? '') !== 'RO') { ?>
 <div class="card">
     <div class="card-header">Set a new AuthInfo code</div>
     <div class="card-body">

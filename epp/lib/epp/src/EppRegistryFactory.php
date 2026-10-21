@@ -1,11 +1,20 @@
 <?php
-/**
+
+/*
  * Namingo EPP Client
  *
- * (c) 2023–2026 Namingo Team (https://namingo.org)
- * Based on https://github.com/xpanel/epp-bundle by Lilian Rudenco
+ * Copyright (c) 2023-2026 Taras Kondratyuk
+ * Copyright (c) 2025-2026 Namingo contributors
+ * Copyright (c) 2026 Terbora Ltd.
  *
- * MIT License
+ * Based in part on xpanel/epp-bundle
+ * Copyright (c) 2017 Lilian Rudenco
+ * https://github.com/xpanel/epp-bundle
+ *
+ * Licensed under the MIT License.
+ * See the LICENSE file distributed with this software for the full license text.
+ *
+ * SPDX-License-Identifier: MIT
  */
 
 namespace Pinga\Tembo;
@@ -28,6 +37,7 @@ use Pinga\Tembo\Registries\MxEpp;
 use Pinga\Tembo\Registries\NoEpp;
 use Pinga\Tembo\Registries\PlEpp;
 use Pinga\Tembo\Registries\PtEpp;
+use Pinga\Tembo\Registries\RoEpp;
 use Pinga\Tembo\Registries\SeEpp;
 use Pinga\Tembo\Registries\SiEpp;
 use Pinga\Tembo\Registries\UaEpp;
@@ -88,6 +98,9 @@ class EppRegistryFactory
                 break;
             case 'PT':
                 return new PtEpp();
+                break;
+            case 'RO':
+                return new RoEpp();
                 break;
             case 'SE':
                 return new SeEpp();

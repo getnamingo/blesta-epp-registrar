@@ -35,7 +35,7 @@ A generic Blesta registrar module for connecting to any domain registry that use
 | NIC.LV | .lv | LV | |
 | .PT | .pt | PT | |
 | Regtons | all | | |
-| RoTLD | .ro | | |
+| RoTLD | .ro | RO | |
 | RyCE | all | | |
 | SIDN | all | | |
 | SWITCH | .ch, .li | SWITCH | Set AuthInfo on Request |

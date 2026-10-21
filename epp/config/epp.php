@@ -1,5 +1,22 @@
 <?php
 
+/*
+ * Namingo EPP Registrar module for Blesta
+ *
+ * Copyright (c) 2023-2026 Taras Kondratyuk
+ * Copyright (c) 2025-2026 Namingo contributors
+ * Copyright (c) 2026 Terbora Ltd.
+ *
+ * Based on Generic EPP with DNSsec Registrar Module for WHMCS written in 2019 by Lilian Rudenco (info@xpanel.com)
+ * Work of Lilian Rudenco is under http://opensource.org/licenses/afl-3.0.php Academic Free License (AFL 3.0)
+ * https://github.com/xpanel/Generic-EPP-with-DNSsec-Registrar-Module-for-WHMCS
+ *
+ * Licensed under the MIT License.
+ * See the LICENSE file distributed with this software for the full license text.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 Configure::set('Epp.registry_profiles', [
     'generic' => 'Generic RFC EPP',
     'GE' => 'Caucasus Online (.ge)',
@@ -10,6 +27,7 @@ Configure::set('Epp.registry_profiles', [
     'MX' => 'NIC Mexico (.mx)',
     'PL' => 'NASK (.pl)',
     'PT' => 'DNS.PT (.pt)',
+    'RO' => 'RoTLD (.ro)',
     'SE' => 'IIS (.se/.nu)',
     'SI' => 'ARNES / Register.si (.si)',
     'SWITCH' => 'SWITCH (.ch/.li)',

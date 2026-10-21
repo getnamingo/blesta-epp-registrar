@@ -1,5 +1,22 @@
 <?php
 
+/*
+ * Namingo EPP Registrar module for Blesta
+ *
+ * Copyright (c) 2023-2026 Taras Kondratyuk
+ * Copyright (c) 2025-2026 Namingo contributors
+ * Copyright (c) 2026 Terbora Ltd.
+ *
+ * Based on Generic EPP with DNSsec Registrar Module for WHMCS written in 2019 by Lilian Rudenco (info@xpanel.com)
+ * Work of Lilian Rudenco is under http://opensource.org/licenses/afl-3.0.php Academic Free License (AFL 3.0)
+ * https://github.com/xpanel/Generic-EPP-with-DNSsec-Registrar-Module-for-WHMCS
+ *
+ * Licensed under the MIT License.
+ * See the LICENSE file distributed with this software for the full license text.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
 $lang['Epp.name'] = 'EPP Registrar';
 $lang['Epp.description'] = 'Connect Blesta to a domain registry through the standard EPP protocol.';
 $lang['Epp.module_row'] = 'EPP Account';
@@ -117,3 +134,18 @@ $lang['Epp.!error.premium'] = '%1$s is a premium domain and premium registration
 $lang['Epp.!error.tmch'] = 'TMCH notice ID and expiry are required during the claims period.';
 $lang['Epp.!error.child_host'] = 'The child nameserver must be below this domain.';
 $lang['Epp.!error.confirm_domain'] = 'Type the exact domain name to confirm deletion.';
+
+$lang['Epp.service.ro_person_type'] = 'Registrant Type';
+$lang['Epp.service.ro_type_auto'] = 'Auto: company when company name is set, otherwise private person';
+$lang['Epp.service.ro_type_p'] = 'Private Person';
+$lang['Epp.service.ro_type_ap'] = 'Authorized Person';
+$lang['Epp.service.ro_type_nc'] = 'Non-commercial Organization';
+$lang['Epp.service.ro_type_c'] = 'Commercial Company';
+$lang['Epp.service.ro_type_gi'] = 'Government Institution';
+$lang['Epp.service.ro_type_pi'] = 'Public Institution';
+$lang['Epp.service.ro_type_o'] = 'Other Legal Entity';
+$lang['Epp.service.ro_cnp_fiscal_code'] = 'CNP / Fiscal Code (required for Romanian holders)';
+$lang['Epp.service.ro_registration_number'] = 'Registration Number (required for Romanian commercial companies)';
+$lang['Epp.service.ro_transfer_key'] = 'RoTLD registrar-transfer authorization key';
+$lang['Epp.!error.ro_transfer_key'] = 'The holder must generate a registrar-transfer authorization key at https://www.rotld.ro/domadmin. The domain management password is not a transfer key.';
+$lang['Epp.!error.ro_transfer_action'] = 'RoTLD registrar transfers complete immediately. Approve, cancel and reject actions are unavailable.';

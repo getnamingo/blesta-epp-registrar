@@ -11,6 +11,7 @@
                 'unhold' => ['Remove clientHold', 'btn-outline-secondary'],
                 'restore' => ['Request RGP restore', 'btn-outline-primary']
             ] as $action => $button) { ?>
+			    <?php $this->Form->create(null, ['class' => 'd-inline']); ?>
                 <?php $this->Form->create(null, ['class' => 'd-inline']); ?>
                 <?php $this->Form->fieldHidden('action', $action); ?>
                 <button type="submit" class="btn <?php echo $button[1]; ?>"><?php echo $this->Html->safe($button[0]); ?></button>
@@ -20,6 +21,9 @@
     </div>
 </div>
 
+<?php if (($profile ?? '') === 'RO') { ?>
+<div class="alert alert-info">RoTLD registrar transfers complete immediately without renewal. Pending-transfer actions are unavailable.</div>
+<?php } else { ?>
 <div class="card mb-3">
     <div class="card-header">Transfer actions</div>
     <div class="card-body">
@@ -38,6 +42,8 @@
         </div>
     </div>
 </div>
+
+<?php } ?>
 
 <div class="card border-danger">
     <div class="card-header text-danger">Delete at registry</div>

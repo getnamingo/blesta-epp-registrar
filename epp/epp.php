@@ -1,11 +1,22 @@
 <?php
-/**
- * Generic EPP registrar module for Blesta.
+
+/*
+ * Namingo EPP Registrar module for Blesta
  *
- * Written in 2026 by Namingo Team (https://namingo.org)
+ * Copyright (c) 2023-2026 Taras Kondratyuk
+ * Copyright (c) 2025-2026 Namingo contributors
+ * Copyright (c) 2026 Terbora Ltd.
  *
- * @license MIT
+ * Based on Generic EPP with DNSsec Registrar Module for WHMCS written in 2019 by Lilian Rudenco (info@xpanel.com)
+ * Work of Lilian Rudenco is under http://opensource.org/licenses/afl-3.0.php Academic Free License (AFL 3.0)
+ * https://github.com/xpanel/Generic-EPP-with-DNSsec-Registrar-Module-for-WHMCS
+ *
+ * Licensed under the MIT License.
+ * See the LICENSE file distributed with this software for the full license text.
+ *
+ * SPDX-License-Identifier: MIT
  */
+
 class Epp extends RegistrarModule
 {
     private const MODULE_DIR = 'epp';
@@ -398,7 +409,7 @@ class Epp extends RegistrarModule
 
         if (!$transfer) {
             try {
-                $nameservers = $this->nameserversFromVars($vars);
+                $nameservers = $this->nameserversFromVars($vars, $this->resolveRow($vars['module_row_id'] ?? ($package->module_row ?? null)));
                 if (count($nameservers) < 2) {
                     $errors['nameservers']['required'] = Language::_('Epp.!error.nameservers', true);
                 }
@@ -422,7 +433,7 @@ class Epp extends RegistrarModule
         }
 
         try {
-            $row = $this->resolveRow($package->module_row ?? null);
+            $row = $this->resolveRow($vars['module_row_id'] ?? ($package->module_row ?? null));
             $profile = (string) ($row->meta->registry_profile ?? self::DEFAULT_PROFILE);
             $this->validateProfileFields($profile, $vars, $transfer);
             if (!$transfer && $this->truthy($row->meta->tmch_claims_period_active ?? false)) {
@@ -468,11 +479,11 @@ class Epp extends RegistrarModule
         if (($vars['use_module'] ?? 'true') === 'true') {
             try {
                 if ($transfer) {
-                    $this->performTransfer($domain, $row, [
+                    $transferred = $this->performTransfer($domain, $row, [
                         'years' => $years,
                         'auth' => trim((string) $vars['auth'])
                     ]);
-                    $remoteMeta['transfer_status'] = 'pending';
+                    $remoteMeta = is_array($transferred) ? $transferred : ['transfer_status' => 'pending'];
                 } else {
                     $vars['years'] = $years;
                     $vars['_contact'] = $this->clientContact($vars['client_id'] ?? null, $vars);
@@ -489,17 +500,18 @@ class Epp extends RegistrarModule
             'transfer' => $transfer ? '1' : '0',
             'auth' => (string) ($vars['auth'] ?? '')
         ];
-        for ($i = 1; $i <= self::MAX_NAMESERVERS; $i++) {
+        for ($i = 1; $i <= $this->maxNameservers($row); $i++) {
             $serviceFields['ns' . $i] = (string) ($vars['ns' . $i] ?? '');
         }
-        foreach (['nin', 'nin_type', 'vat', 'pt_validated_date', 'tmch_notice_id', 'tmch_not_after'] as $field) {
+        foreach (['nin', 'nin_type', 'vat', 'pt_validated_date', 'tmch_notice_id', 'tmch_not_after',
+            'person_type', 'cnp_fiscal_code', 'registration_number'] as $field) {
             if (isset($vars[$field])) {
                 $serviceFields[$field] = (string) $vars[$field];
             }
         }
         $serviceFields = array_merge($serviceFields, $remoteMeta);
 
-        $encrypted = ['auth', 'auth_info'];
+        $encrypted = ['auth', 'auth_info', 'cnp_fiscal_code', 'registration_number'];
         $result = [];
         foreach ($serviceFields as $key => $value) {
             if (is_array($value)) {
@@ -605,11 +617,13 @@ class Epp extends RegistrarModule
     private function buildServiceFields($package, $vars, $client)
     {
         $fields = new ModuleFields();
+        $row = $this->resolveRow($package->module_row ?? null);
+        $profile = (string) ($row->meta->registry_profile ?? self::DEFAULT_PROFILE);
         $transfer = $this->truthy($vars->transfer ?? false) || trim((string) ($vars->auth ?? '')) !== '';
 
         if (!isset($vars->ns1) && isset($package->meta->ns)) {
             foreach (array_values((array) $package->meta->ns) as $index => $nameserver) {
-                if ($index < self::MAX_NAMESERVERS) {
+                if ($index < $this->maxNameservers($row)) {
                     $vars->{'ns' . ($index + 1)} = $nameserver;
                 }
             }
@@ -648,7 +662,7 @@ class Epp extends RegistrarModule
         }
 
         if ($transfer || !$client) {
-            $auth = $fields->label(Language::_('Epp.service.auth', true), 'epp_auth');
+            $auth = $fields->label(Language::_($profile === 'RO' ? 'Epp.service.ro_transfer_key' : 'Epp.service.auth', true), 'epp_auth');
             $auth->attach($fields->fieldText('auth', (string) ($vars->auth ?? ''), ['id' => 'epp_auth']));
             $fields->setField($auth);
         }
@@ -656,7 +670,7 @@ class Epp extends RegistrarModule
             return $fields;
         }
 
-        for ($i = 1; $i <= self::MAX_NAMESERVERS; $i++) {
+        for ($i = 1; $i <= $this->maxNameservers($row); $i++) {
             $label = $fields->label(Language::_('Epp.service.nameserver', true, $i), 'epp_service_ns' . $i);
             $label->attach($fields->fieldText(
                 'ns' . $i,
@@ -666,11 +680,9 @@ class Epp extends RegistrarModule
             $fields->setField($label);
         }
 
-        $row = $this->resolveRow($package->module_row ?? null);
-        $profile = (string) ($row->meta->registry_profile ?? self::DEFAULT_PROFILE);
         $this->attachProfileFields($fields, $profile, $vars);
 
-        if ($this->truthy($row->meta->tmch_claims_period_active ?? false)) {
+        if ($profile !== 'RO' && $this->truthy($row->meta->tmch_claims_period_active ?? false)) {
             $notice = $fields->label(Language::_('Epp.service.tmch_notice_id', true), 'epp_tmch_notice_id');
             $notice->attach($fields->fieldText(
                 'tmch_notice_id',
@@ -693,6 +705,21 @@ class Epp extends RegistrarModule
 
     private function attachProfileFields(ModuleFields $fields, $profile, $vars)
     {
+        if ($profile === 'RO') {
+            $type = $fields->label(Language::_('Epp.service.ro_person_type', true), 'epp_person_type');
+            $options = ['' => Language::_('Epp.service.ro_type_auto', true)];
+            foreach (['p', 'ap', 'nc', 'c', 'gi', 'pi', 'o'] as $code) {
+                $options[$code] = Language::_('Epp.service.ro_type_' . $code, true);
+            }
+            $type->attach($fields->fieldSelect('person_type', $options, (string) ($vars->person_type ?? ''), ['id' => 'epp_person_type']));
+            $fields->setField($type);
+            foreach (['cnp_fiscal_code', 'registration_number'] as $name) {
+                $label = $fields->label(Language::_('Epp.service.ro_' . $name, true), 'epp_' . $name);
+                $label->attach($fields->fieldText($name, (string) ($vars->{$name} ?? ''), ['id' => 'epp_' . $name]));
+                $fields->setField($label);
+            }
+        }
+
         if (in_array($profile, ['SE', 'HR', 'LV', 'GE'], true)) {
             $nin = $fields->label(Language::_('Epp.service.nin', true), 'epp_nin');
             $nin->attach($fields->fieldText('nin', (string) ($vars->nin ?? ''), ['id' => 'epp_nin']));
@@ -770,7 +797,7 @@ class Epp extends RegistrarModule
         ];
 
         $row = $this->resolveRow($service->module_row_id ?? null);
-        if ($this->truthy($row->meta->min_data_set ?? false)) {
+        if ($this->usesMinimumData($row)) {
             unset($tabs['tabContacts']);
         }
         if ($this->usesHostAttributes($row)) {
@@ -791,7 +818,7 @@ class Epp extends RegistrarModule
         ];
 
         $row = $this->resolveRow($service->module_row_id ?? null);
-        if ($this->truthy($row->meta->min_data_set ?? false)) {
+        if ($this->usesMinimumData($row)) {
             unset($tabs['tabClientContacts']);
         }
         if ($this->usesHostAttributes($row)) {
@@ -892,11 +919,9 @@ class Epp extends RegistrarModule
 
         try {
             if (!empty($post)) {
-                $vars = [];
-                foreach (array_values((array) ($post['ns'] ?? [])) as $index => $nameserver) {
-                    if ($index < self::MAX_NAMESERVERS) {
-                        $vars['ns' . ($index + 1)] = trim((string) $nameserver);
-                    }
+                $vars = ['ns' => (array) ($post['ns'] ?? [])];
+                if (($this->resolveRow($rowId)->meta->registry_profile ?? self::DEFAULT_PROFILE) !== 'RO') {
+                    $vars['ns'] = array_slice($vars['ns'], 0, self::MAX_NAMESERVERS);
                 }
                 $updated = $this->setDomainNameservers($domain, $rowId, $vars);
                 if ($updated && !$this->Input->errors()) {
@@ -915,6 +940,7 @@ class Epp extends RegistrarModule
         return $this->renderTab('tab_nameservers', [
             'domain' => $domain,
             'nameservers' => array_values((array) $nameservers),
+            'max_nameservers' => $this->maxNameservers($this->resolveRow($rowId)),
             'client' => $client
         ]);
     }
@@ -923,6 +949,7 @@ class Epp extends RegistrarModule
     {
         $domain = $this->getServiceDomain($service);
         $rowId = $service->module_row_id ?? ($package->module_row ?? null);
+        $profile = (string) ($this->resolveRow($rowId)->meta->registry_profile ?? self::DEFAULT_PROFILE);
         $contacts = [];
         $row = $this->resolveRow($rowId);
         $profile = (string) ($row->meta->registry_profile ?? self::DEFAULT_PROFILE);
@@ -1099,6 +1126,7 @@ class Epp extends RegistrarModule
             'domain' => $domain,
             'locked' => $locked,
             'auth_info' => $authInfo,
+            'profile' => $profile,
             'epp_code_enabled' => ($package->meta->epp_code ?? '1') === '1',
             'privacy_available' => $privacyAvailable,
             'client' => $client
@@ -1111,6 +1139,7 @@ class Epp extends RegistrarModule
         $rowId = $service->module_row_id ?? ($package->module_row ?? null);
         $info = [];
         $transfer = [];
+        $profile = (string) ($this->resolveRow($rowId)->meta->registry_profile ?? self::DEFAULT_PROFILE);
         $deleted = false;
         $serviceFields = isset($service->fields)
             ? $this->serviceFieldsToObject($service->fields)
@@ -1171,6 +1200,7 @@ class Epp extends RegistrarModule
             'domain' => $domain,
             'info' => $info,
             'transfer' => $transfer,
+            'profile' => $profile,
             'client' => false
         ]);
     }
@@ -1323,6 +1353,9 @@ class Epp extends RegistrarModule
         try {
             $row = $this->resolveRow($module_row_id);
             $domain = $this->normalizeDomain($domain);
+            if (($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'RO') {
+                throw new \RuntimeException('RGP restore is unavailable through the RoTLD driver.');
+            }
             return $this->withClient($row, function ($client) use ($domain, $row) {
                 $this->invoke($client, 'domainRestore', ['domainname' => $domain], $row);
                 return true;
@@ -1359,6 +1392,7 @@ class Epp extends RegistrarModule
         $domain = $this->normalizeDomain($domain);
         return $this->withClient($row, function ($client) use ($domain, $row) {
             $info = $this->invoke($client, 'domainInfo', ['domainname' => $domain], $row);
+            $this->assertRoSponsor($info, $row);
             return [
                 'domain' => $domain,
                 'roid' => (string) ($info['roid'] ?? ''),
@@ -1398,6 +1432,7 @@ class Epp extends RegistrarModule
             $row = $this->resolveRow($module_row_id);
             $domain = $this->normalizeDomain($domain);
             $nameservers = $this->nameserversFromVars($vars);
+            $nameservers = $this->nameserversFromVars($vars, $row);
             if (count($nameservers) < 2) {
                 throw new \InvalidArgumentException(Language::_('Epp.!error.nameservers', true));
             }
@@ -1506,7 +1541,7 @@ class Epp extends RegistrarModule
     private function fetchContactsByRole($domain, $module_row_id = null)
     {
         $row = $this->resolveRow($module_row_id);
-        if ($this->truthy($row->meta->min_data_set ?? false)) {
+        if ($this->usesMinimumData($row)) {
             return [];
         }
         $domain = $this->normalizeDomain($domain);
@@ -1549,7 +1584,7 @@ class Epp extends RegistrarModule
     {
         try {
             $row = $this->resolveRow($module_row_id);
-            if ($this->truthy($row->meta->min_data_set ?? false)) {
+            if ($this->usesMinimumData($row)) {
                 return true;
             }
             $domain = $this->normalizeDomain($domain);
@@ -1591,7 +1626,7 @@ class Epp extends RegistrarModule
                     if ($ptValidatedDate !== '' && empty($data['pt_validated_date'])) {
                         $data['pt_validated_date'] = $ptValidatedDate;
                     }
-                    $this->validateContact($data);
+                    $this->validateContact($data, (string) ($row->meta->registry_profile ?? self::DEFAULT_PROFILE));
                     $payload = $this->contactPayload($id, $data, $row, $role, false);
                     $this->invoke($client, 'contactUpdate', $payload, $row);
                     $updated[$id] = true;
@@ -1607,6 +1642,9 @@ class Epp extends RegistrarModule
     public function getAuthInfo($domain, $module_row_id = null)
     {
         $row = $this->resolveRow($module_row_id);
+        if (($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'RO') {
+            throw new \RuntimeException(Language::_('Epp.!error.ro_transfer_key', true));
+        }
         $domain = $this->normalizeDomain($domain);
         return $this->withClient($row, function ($client) use ($domain, $row) {
             if ($this->truthy($row->meta->set_authinfo_on_info ?? false)) {
@@ -1631,6 +1669,9 @@ class Epp extends RegistrarModule
     {
         try {
             $row = $this->resolveRow($module_row_id);
+            if (($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'RO') {
+                throw new \RuntimeException(Language::_('Epp.!error.ro_transfer_key', true));
+            }
             $domain = $this->normalizeDomain($domain);
             $eppCode = trim((string) $epp_code);
             if ($eppCode === '') {
@@ -1654,7 +1695,7 @@ class Epp extends RegistrarModule
     {
         try {
             $row = $this->resolveRow($module_row_id);
-            if ($this->truthy($row->meta->min_data_set ?? false)) {
+            if ($this->usesMinimumData($row)) {
                 return true;
             }
             $domain = $this->normalizeDomain($domain);
@@ -1846,6 +1887,9 @@ class Epp extends RegistrarModule
             throw new \InvalidArgumentException('Invalid transfer action.');
         }
         $row = $this->resolveRow($module_row_id);
+        if (($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'RO') {
+            throw new \RuntimeException(Language::_('Epp.!error.ro_transfer_action', true));
+        }
         $domain = $this->normalizeDomain($domain);
         return $this->withClient($row, function ($client) use ($domain, $action, $row) {
             $this->invoke($client, 'domainTransfer', [
@@ -1860,6 +1904,15 @@ class Epp extends RegistrarModule
     {
         $row = $this->resolveRow($module_row_id);
         $domain = $this->normalizeDomain($domain);
+        if (($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'RO') {
+            $info = $this->fetchDomainInfo($domain, $module_row_id);
+            return [
+                'status' => 'sponsored',
+                'action_date' => $info['transferred'],
+                'expires' => $info['expires'],
+                'acting_client' => $info['client_id']
+            ];
+        }
         return $this->withClient($row, function ($client) use ($domain, $row) {
             $response = $this->invoke($client, 'domainTransfer', [
                 'domainname' => $domain,
@@ -1883,7 +1936,8 @@ class Epp extends RegistrarModule
         if ($auth === '') {
             throw new \InvalidArgumentException(Language::_('Epp.!error.auth', true));
         }
-        if (!$this->isValidTerm($this->getDomainTld($domain, $row), $years, true)) {
+        if (($row->meta->registry_profile ?? self::DEFAULT_PROFILE) !== 'RO'
+            && !$this->isValidTerm($this->getDomainTld($domain, $row), $years, true)) {
             throw new \InvalidArgumentException(Language::_('Epp.!error.term', true));
         }
 
@@ -1894,6 +1948,10 @@ class Epp extends RegistrarModule
                 'authInfoPw' => $auth,
                 'op' => 'request'
             ];
+
+            if (($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'RO') {
+                unset($payload['years']);
+            }
 
             if (($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'FR') {
                 $info = $this->invoke($client, 'domainInfo', ['domainname' => $domain], $row);
@@ -1908,7 +1966,23 @@ class Epp extends RegistrarModule
                 }
             }
 
-            $this->invoke($client, 'domainTransfer', $payload, $row);
+            $response = $this->invoke($client, 'domainTransfer', $payload, $row);
+            if (($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'RO') {
+                if ((int) ($response['code'] ?? 0) !== 1000) {
+                    throw new \RuntimeException('RoTLD did not confirm immediate transfer completion.');
+                }
+                $info = $this->invoke($client, 'domainInfo', ['domainname' => $domain], $row);
+                $this->assertRoSponsor($info, $row);
+                if (trim((string) ($info['exDate'] ?? '')) === '') {
+                    throw new \RuntimeException('RoTLD returned no expiry date after transfer; sync before retrying.');
+                }
+                return [
+                    'transfer_status' => 'completed',
+                    'auth' => '',
+                    'registered_at' => (string) ($info['crDate'] ?? ''),
+                    'expires_at' => (string) $info['exDate']
+                ];
+            }
             return true;
         });
     }
@@ -1976,16 +2050,16 @@ class Epp extends RegistrarModule
             throw new \InvalidArgumentException(Language::_('Epp.!error.term', true));
         }
 
-        $nameservers = $this->nameserversFromVars($vars);
+        $nameservers = $this->nameserversFromVars($vars, $row);
         if (count($nameservers) < 2) {
             throw new \InvalidArgumentException(Language::_('Epp.!error.nameservers', true));
         }
 
         $profile = (string) ($row->meta->registry_profile ?? self::DEFAULT_PROFILE);
-        $minimumData = $this->truthy($row->meta->min_data_set ?? false);
+        $minimumData = $this->usesMinimumData($row);
         $contactData = (array) ($vars['_contact'] ?? []);
         if (!$minimumData) {
-            $this->validateContact($contactData);
+            $this->validateContact($contactData, $profile);
         }
 
         return $this->withClient($row, function ($client) use (
@@ -2016,6 +2090,9 @@ class Epp extends RegistrarModule
                 }
                 $payload = $this->contactPayload($id, $contactData, $row, $role, true, $vars);
                 $response = $this->invoke($client, 'contactCreate', $payload, $row);
+                if ($profile === 'RO' && trim((string) ($response['id'] ?? '')) === '') {
+                    throw new \RuntimeException('RoTLD contact:create returned no assigned contact ID.');
+                }
                 $contactIds[$role] = (string) ($response['id'] ?? $id);
             }
 
@@ -2061,7 +2138,7 @@ class Epp extends RegistrarModule
                 }
             }
 
-            if ($this->truthy($row->meta->tmch_claims_period_active ?? false)) {
+            if ($profile !== 'RO' && $this->truthy($row->meta->tmch_claims_period_active ?? false)) {
                 $noticeId = trim((string) ($vars['tmch_notice_id'] ?? ''));
                 $notAfter = trim((string) ($vars['tmch_not_after'] ?? ''));
                 if ($noticeId === '' || $notAfter === '') {
@@ -2081,12 +2158,16 @@ class Epp extends RegistrarModule
                 $this->setPrivacyOnClient($client, $domain, true, $row);
             }
 
-            return [
+            $result = [
                 'contact_ids' => $contactIds,
                 'auth_info' => $authInfo,
                 'registered_at' => (string) ($create['crDate'] ?? ''),
                 'expires_at' => (string) ($create['exDate'] ?? '')
             ];
+            if ($profile === 'RO') {
+                unset($result['auth_info']);
+            }
+            return $result;
         });
     }
 
@@ -2097,6 +2178,7 @@ class Epp extends RegistrarModule
             'SWITCH' => ['registrant', 'tech'],
             'PL' => ['registrant'],
             'GE' => ['registrant'],
+            'RO' => ['registrant'],
             'VRSN' => ['registrant', 'admin', 'tech', 'billing'],
             'generic' => ['registrant', 'admin', 'tech', 'billing']
         ];
@@ -2167,12 +2249,16 @@ class Epp extends RegistrarModule
             $payload['validatedDate'] = $this->normalizeUtcDate($validatedDate);
         } elseif ($create && $profile === 'GE') {
             $payload['nin'] = (string) ($serviceVars['nin'] ?? '');
+        } elseif ($create && $profile === 'RO') {
+            $payload['person_type'] = (string) ($serviceVars['person_type'] ?? '');
+            $payload['cnp_fiscal_code'] = (string) ($serviceVars['cnp_fiscal_code'] ?? '');
+            $payload['registration_number'] = (string) ($serviceVars['registration_number'] ?? '');
         }
 
         return $payload;
     }
 
-    private function validateContact(array $contact)
+    private function validateContact(array $contact, $profile = null)
     {
         $required = [
             'first_name' => 'first name',
@@ -2184,6 +2270,10 @@ class Epp extends RegistrarModule
             'phone' => 'phone',
             'email' => 'email'
         ];
+        if ($profile === 'RO') {
+            // RoTLD may return a single legal name without a separate surname.
+            unset($required['last_name']);
+        }
         foreach ($required as $key => $label) {
             if (trim((string) ($contact[$key] ?? '')) === '') {
                 throw new \InvalidArgumentException(Language::_('Epp.!error.contact', true, $label));
@@ -2288,7 +2378,8 @@ class Epp extends RegistrarModule
 
     private function assertPremiumAllowed($client, $domain, $row, $command, $years)
     {
-        if (!$this->truthy($row->meta->gtld ?? false)
+        if (($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'RO'
+            || !$this->truthy($row->meta->gtld ?? false)
             || !$this->truthy($row->meta->enable_fee_extension ?? false)) {
             return;
         }
@@ -2347,6 +2438,26 @@ class Epp extends RegistrarModule
         return $record;
     }
 
+    private function usesMinimumData($row)
+    {
+        return ($row->meta->registry_profile ?? self::DEFAULT_PROFILE) !== 'RO'
+            && $this->truthy($row->meta->min_data_set ?? false);
+    }
+
+    private function maxNameservers($row)
+    {
+        return ($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'RO' ? 6 : self::MAX_NAMESERVERS;
+    }
+
+    private function assertRoSponsor(array $info, $row)
+    {
+        if (($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'RO'
+            && (trim((string) ($info['clID'] ?? '')) === ''
+                || (string) $info['clID'] !== trim((string) ($row->meta->clid ?? '')))) {
+            throw new \RuntimeException('The domain is not confirmed as sponsored by this RoTLD registrar.');
+        }
+    }
+
     private function usesHostAttributes($row)
     {
         if ((string) ($row->meta->ns_mode ?? 'hostObj') === 'hostAttr') {
@@ -2389,6 +2500,9 @@ class Epp extends RegistrarModule
         if (in_array($profile, ['SE', 'HR', 'LV', 'GE'], true)
             && trim((string) ($vars['nin'] ?? '')) === '') {
             throw new \InvalidArgumentException(Language::_('Epp.!error.required', true, 'National ID'));
+        }
+        if ($profile === 'RO' && !in_array((string) ($vars['person_type'] ?? ''), ['', 'p', 'ap', 'nc', 'c', 'gi', 'pi', 'o'], true)) {
+            throw new \InvalidArgumentException('Select a valid RoTLD registrant type.');
         }
         if ($profile === 'HR' && !in_array(($vars['nin_type'] ?? ''), ['personal', 'company'], true)) {
             throw new \InvalidArgumentException('Select a valid identification type.');
@@ -2686,14 +2800,23 @@ class Epp extends RegistrarModule
             && substr($domain, -strlen($tld)) === $tld;
     }
 
-    private function nameserversFromVars(array $vars)
+    private function nameserversFromVars(array $vars, $row = null)
     {
+        $limit = $row === null ? self::MAX_NAMESERVERS : $this->maxNameservers($row);
+        if ($row !== null && ($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'RO') {
+            foreach ($vars as $key => $value) {
+                if (preg_match('/^ns([0-9]+)$/', (string) $key, $match)
+                    && (int) $match[1] > $limit && trim((string) $value) !== '') {
+                    throw new \InvalidArgumentException('RoTLD supports at most six nameservers.');
+                }
+            }
+        }
         $values = [];
         if (isset($vars['ns']) && is_array($vars['ns'])) {
             $values = array_values($vars['ns']);
         } else {
             $hasNamedNameservers = false;
-            for ($i = 1; $i <= self::MAX_NAMESERVERS; $i++) {
+            for ($i = 1; $i <= $limit; $i++) {
                 if (array_key_exists('ns' . $i, $vars)) {
                     $hasNamedNameservers = true;
                     $values[] = $vars['ns' . $i];
@@ -2711,6 +2834,10 @@ class Epp extends RegistrarModule
             }
             $nameserver = $this->normalizeDomain($value);
             $nameservers[$nameserver] = $nameserver;
+        }
+        if ($row !== null && ($row->meta->registry_profile ?? self::DEFAULT_PROFILE) === 'RO'
+            && count($nameservers) > $limit) {
+            throw new \InvalidArgumentException('RoTLD supports at most six nameservers.');
         }
         return array_values($nameservers);
     }

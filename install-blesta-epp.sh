@@ -2,14 +2,14 @@
 set -Eeuo pipefail
 IFS=$'\n\t'
 
-VERSION='1.0.3'
+VERSION='1.2.6'
 # Pin installer input to the reviewed source commit so a moved tag or branch
 # cannot silently change what is installed.
-ARCHIVE="v1.0.3.tar.gz"
-DOWNLOAD_URL="https://github.com/getnamingo/blesta-epp-registrar/archive/refs/tags/v1.0.3.tar.gz"
+ARCHIVE="v1.2.6.tar.gz"
+DOWNLOAD_URL="https://github.com/getnamingo/blesta-epp-registrar/archive/refs/tags/v1.2.6.tar.gz"
 
 CC_REGISTRIES=(
-  registrebf switch niccl cocca cocca2 eurid afnic nicge carnet nicim switchli
+  arnes registrebf switch niccl cocca cocca2 eurid afnic nicge carnet nicim switchli
   niclv nicmx sidn iisnu nask rotld iis hostmaster ye zadna
 )
 G_REGISTRIES=(
